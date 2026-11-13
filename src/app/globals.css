@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Design tokens taken from the Back Office Figma: navy shell, green primary action. */
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-950: #070d47;
+  --color-brand-900: #0b1568;
+  --color-brand-800: #101e8a;
+  --color-brand-700: #1b2bb0;
+  --color-brand-600: #2f40c9;
+  --color-brand-100: #dfe3f8;
+  --color-brand-50: #f0f2fc;
+
+  --color-accent-700: #2f8f2e;
+  --color-accent-600: #3daa3c;
+  --color-accent-500: #4cc14a;
+  --color-accent-100: #d9f3d8;
+  --color-accent-50: #eefaee;
+
+  --color-ink-900: #14161f;
+  --color-ink-700: #3b4050;
+  --color-ink-500: #5b6478;
+  --color-ink-400: #9197a8;
+  --color-line: #e6e8ef;
+  --color-surface: #f7f8fa;
+
+  --radius-card: 14px;
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-pop: 0 20px 48px -12px rgb(7 13 71 / 0.28);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-brand-800);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* BRD NFR014: visible keyboard focus on every control. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbars: thin, rounded, and quiet until hovered. Firefox uses the two standard
+   properties; Chromium, Edge and Safari use the ::-webkit rules. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9cdd8 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c9cdd8;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #9197a8;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* On the navy sidebar the thumb is a translucent white instead of grey. */
+.scroll-on-dark {
+  scrollbar-color: rgb(255 255 255 / 0.28) transparent;
+}
+.scroll-on-dark::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.28);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.scroll-on-dark::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.5);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* Keeps page width steady when content grows past the fold. */
+.scroll-stable {
+  scrollbar-gutter: stable;
+}
