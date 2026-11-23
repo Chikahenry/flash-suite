@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { CaseBody } from "@/components/cases/case-body";
 import { PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorState, Skeleton } from "@/components/ui/query-state";
 import { useCase } from "@/lib/bo/modules";
 
@@ -20,7 +21,7 @@ export default function CasePage() {
   const c = q.data;
   return (
     <>
-      <PageHeader back={back} title={[c.categoryName, c.subcategoryName].filter(Boolean).join(": ") || "Case"} description={`${c.ticketId} · Tracking no. ${c.complaintTrackingNumber ?? "—"}`} />
+      <PageHeader back={back} title={[c.categoryName, c.subcategoryName].filter(Boolean).join(": ") || "Case"} description={`${c.ticketId} · Tracking no. ${c.complaintTrackingNumber ?? "—"}`} actions={<RefreshButton />} />
       <CaseBody c={c} />
     </>
   );

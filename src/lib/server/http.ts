@@ -35,3 +35,21 @@ export async function readJson(request: Request, maxBytes = 4096): Promise<Recor
 }
 
 export const text = (value: unknown, max: number): string | null => (typeof value === "string" && value.length > 0 && value.length <= max ? value : null);
+
+/**
+ * Wraps a route handler so an unexpected error answers with a clean JSON message instead of a blank 500.
+ * A missing server setting is named (the name is not a secret) so a new deployment is quick to fix.
+ * Only the error's name is logged, never its text, because the text could carry request data.
+ */
+export const guard =
+  <A extends unknown[]>(handler: (request: Request, ...rest: A) => Promise<Response>) =>
+  async (request: Request, ...rest: A): Promise<Response> => {
+    try {
+      return await handler(request, ...rest);
+    } catch (e) {
+      const missing = e instanceof Error ? /^Missing environment variable (\w+)/.exec(e.message)?.[1] : undefined;
+      console.error(missing ? `[api] missing setting ${missing}` : `[api] unexpected ${e instanceof Error ? e.name : "error"}`);
+      if (missing) return failure(500, "CONFIG_MISSING", `The server is missing the setting ${missing}. Add it in the host's environment settings, then redeploy.`);
+      return failure(500, "SERVER_ERROR", "Something went wrong on the server. Try again shortly.");
+    }
+  };

@@ -8,6 +8,7 @@ import { ActionDialog } from "@/components/ui/action-dialog";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 import { Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Modal } from "@/components/ui/modal";
 import { ErrorState } from "@/components/ui/query-state";
 import { DownloadCsvButton, FiltersButton, Pager, SearchField, Toolbar } from "@/components/ui/toolbar";
@@ -200,7 +201,7 @@ export default function StaffPage() {
 
   return (
     <>
-      <PageHeader title="Users" />
+      <PageHeader title="Users" actions={<RefreshButton />} />
       {done && <div className="mb-4"><Notice tone="success" title="Done">{done}</Notice></div>}
       {exportError && <div className="mb-4"><Notice tone="danger" title="Export failed">{exportError}</Notice></div>}
       <Toolbar

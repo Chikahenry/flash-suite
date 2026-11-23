@@ -7,6 +7,7 @@ import { ActionDialog } from "@/components/ui/action-dialog";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorState } from "@/components/ui/query-state";
 import { Pager } from "@/components/ui/toolbar";
 import { formatApiDateTime, humanise } from "@/lib/bo/format";
@@ -42,7 +43,7 @@ export default function BroadcastsPage() {
   return (
     <>
       <PageHeader title="Broadcasts" description="Announcements and security alerts shown to corporate users"
-        actions={<button type="button" onClick={() => setOpen(true)} className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent-500 px-4 text-sm font-medium text-white hover:bg-accent-600"><Plus size={16} aria-hidden /> New broadcast</button>} />
+        actions={<><RefreshButton /><button type="button" onClick={() => setOpen(true)} className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent-500 px-4 text-sm font-medium text-white hover:bg-accent-600"><Plus size={16} aria-hidden /> New broadcast</button></>} />
       {done && <div className="mb-4"><Notice tone="success" title="Published">{done}</Notice></div>}
       <div className="mb-4">
         <Select aria-label="Type" value={type} onChange={(e) => url.set({ type: e.target.value })} className="w-52">

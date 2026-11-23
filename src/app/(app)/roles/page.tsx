@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { Field, Input, Textarea } from "@/components/ui/form";
 import { Card, Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Modal } from "@/components/ui/modal";
 import { ErrorState, Skeleton } from "@/components/ui/query-state";
 import { SearchField, Toolbar } from "@/components/ui/toolbar";
@@ -139,7 +140,7 @@ export default function RolesPage() {
 
   return (
     <>
-      <PageHeader title="Roles & Permissions" />
+      <PageHeader title="Roles & Permissions" actions={<RefreshButton />} />
       {done && <div className="mb-4"><Notice tone="success" title="Done">{done}</Notice></div>}
       <Toolbar actions={<button type="button" onClick={() => setEditing("new")} className="inline-flex h-10 items-center gap-2 rounded-lg border border-accent-100 bg-accent-50 px-4 text-sm font-medium text-accent-700 hover:bg-accent-100">Create New Role <Plus size={16} aria-hidden /></button>}>
         <SearchField value={q} onChange={setQ} placeholder="Search by Name" />

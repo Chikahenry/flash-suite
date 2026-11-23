@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Select } from "@/components/ui/form";
 import { PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorState } from "@/components/ui/query-state";
 import { DateRangeButton, Pager } from "@/components/ui/toolbar";
 import { useCases, useCaseStates } from "@/lib/bo/modules";
@@ -50,7 +51,7 @@ export default function CasesPage() {
 
   return (
     <>
-      <PageHeader title="Case Management" description="Track complaints and service cases logged for customers in CRM" />
+      <PageHeader title="Case Management" description="Track complaints and service cases logged for customers in CRM" actions={<RefreshButton />} />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <form onSubmit={open} className="relative min-w-[240px] flex-1 max-w-md">

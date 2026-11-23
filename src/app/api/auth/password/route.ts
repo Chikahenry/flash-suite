@@ -1,12 +1,12 @@
 import { backendFetch } from "@/lib/server/backend";
 import { config } from "@/lib/server/config";
-import { failure, isSameOrigin, json, readJson, text } from "@/lib/server/http";
+import { failure, isSameOrigin, json, readJson, text, guard } from "@/lib/server/http";
 import { extractTokens, readSession, saveSession } from "@/lib/server/session";
 
 // Change the signed-in staff member's password, or replace a temporary one at sign-in
 // (Authentication API: POST /api/v1/auth/password/change). On success the back end returns fresh tokens,
 // which replace the session. Passwords are forwarded only; never stored or logged.
-export async function POST(request: Request) {
+async function handle(request: Request) {
   if (!isSameOrigin(request)) return failure(403, "FORBIDDEN", "Request refused.");
 
   const body = await readJson(request);
@@ -31,3 +31,4 @@ export async function POST(request: Request) {
   if (tokens) await saveSession(tokens, { keepStart: true, username });
   return json({ status: tokens ? "authenticated" : "changed" });
 }
+export const POST = guard(handle);

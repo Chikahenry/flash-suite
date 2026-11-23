@@ -8,6 +8,7 @@ import { ActionDialog } from "@/components/ui/action-dialog";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Select, Textarea } from "@/components/ui/form";
 import { Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Modal } from "@/components/ui/modal";
 import { ErrorState, Skeleton } from "@/components/ui/query-state";
 import { Pager } from "@/components/ui/toolbar";
@@ -52,7 +53,7 @@ export default function AccountUpgradesPage() {
 
   return (
     <>
-      <PageHeader title="Account Upgrades" description="Review customers' requests to move to a higher KYC tier" />
+      <PageHeader title="Account Upgrades" description="Review customers' requests to move to a higher KYC tier" actions={<RefreshButton />} />
       {done && <div className="mb-4"><Notice tone="success" title="Done">{done}</Notice></div>}
       <div className="mb-4">
         <Select aria-label="Status" value={status} onChange={(e) => url.set({ status: e.target.value })} className="w-52">

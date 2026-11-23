@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ApprovalPanel } from "@/components/approvals/approval-panel";
 import { Card, EmptyState, Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 
 // One approval request: GET /approval-requests/{id}, with its history and the decisions available.
 export default function RequestDetailPage() {
@@ -18,7 +19,7 @@ export default function RequestDetailPage() {
 
   return (
     <>
-      <PageHeader back={back} title="Request details" />
+      <PageHeader back={back} title="Request details" actions={<RefreshButton />} />
       {done && <div className="mb-4"><Notice tone="success">{done}</Notice></div>}
       <Card><ApprovalPanel id={id} onChanged={setDone} /></Card>
     </>

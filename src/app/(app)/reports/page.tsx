@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { Field, Input, Select } from "@/components/ui/form";
 import { Card, Notice, PageHeader, Tabs } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Modal } from "@/components/ui/modal";
 import { ErrorState, Skeleton } from "@/components/ui/query-state";
 import { Pager } from "@/components/ui/toolbar";
@@ -83,7 +84,7 @@ export default function ReportsPage() {
 
   return (
     <>
-      <PageHeader title="Reports" description="Generate and export reports for current-release activity." actions={tab === "schedules" ? undefined : undefined} />
+      <PageHeader title="Reports" description="Generate and export reports for current-release activity." actions={<RefreshButton />} />
       {notice && <div className="mb-4"><Notice tone={notice.tone}>{notice.text}</Notice></div>}
       <Tabs<Tab> value={tab} onChange={setTab} tabs={[
         { id: "catalogue", label: "Catalogue", count: catalog.data?.length },

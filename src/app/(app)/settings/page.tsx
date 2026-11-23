@@ -10,6 +10,8 @@ import { Card, DefinitionGrid, Notice, PageHeader } from "@/components/ui/layout
 import { DateRangeButton, Pager, SearchField } from "@/components/ui/toolbar";
 import { BusinessHoursForm, EvidenceChecklistForm, ListEditor, NotificationRuleForm, SessionSettingsForm } from "@/components/settings/config-forms";
 import { useRaise } from "@/components/requests/use-raise";
+import { PasswordRules } from "@/components/ui/password-rules";
+import { passwordProblem } from "@/lib/password";
 import {
   changeReasons, documentTypes, evidenceChecklists, notificationRules, serviceTargets,
   type EvidenceChecklist, type NotificationRule, type ServiceTarget,
@@ -59,7 +61,8 @@ function ChangePassword() {
   const submit = async () => {
     setDone(false);
     if (fields.some(([id]) => !values[id])) return setError("Fill in all three fields.");
-    if (values.new.length < 8) return setError("The new password must be at least 8 characters.");
+    const problem = passwordProblem(values.new);
+    if (problem) return setError(problem);
     if (values.new !== values.again) return setError("The new password and the re-typed password do not match.");
     setError(null);
     setBusy(true);
@@ -92,6 +95,7 @@ function ChangePassword() {
               <input id={"pw-" + id} type={show[id] ? "text" : "password"} placeholder="******************" value={values[id] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [id]: e.target.value }))} className="h-11 w-full rounded-lg bg-surface pl-10 pr-10 text-sm placeholder:text-ink-400 focus:bg-white focus:outline-2 focus:outline-brand-600" />
               <button type="button" aria-label={show[id] ? "Hide password" : "Show password"} onClick={() => setShow((v) => ({ ...v, [id]: !v[id] }))} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-ink-700">{show[id] ? <Eye size={18} /> : <EyeOff size={18} />}</button>
             </div>
+            {id === "new" && <div className="mt-3"><PasswordRules value={values.new ?? ""} /></div>}
           </div>
         ))}
                 <button type="button" onClick={() => void submit()} disabled={busy} className="h-11 rounded-lg bg-accent-500 text-sm font-medium text-white hover:bg-accent-600 disabled:opacity-60">{busy ? "Saving…" : "Change Password"}</button>

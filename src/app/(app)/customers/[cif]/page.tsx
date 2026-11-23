@@ -9,6 +9,7 @@ import { ActionDialog, ReasonDialog } from "@/components/ui/action-dialog";
 import { Field, Select } from "@/components/ui/form";
 import { Notice } from "@/components/ui/layout";
 import { ErrorState, Skeleton } from "@/components/ui/query-state";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { ActivityTab, CasesTab, KycTab, TransactionsTab } from "@/components/customers/api-tables";
 import { UpdateCustomerModal } from "@/components/customers/update-customer-modal";
 import {
@@ -110,6 +111,7 @@ export default function CustomerPage() {
           </div>
         </div>
         <div className="relative flex flex-wrap gap-3">
+          <RefreshButton />
           <button type="button" className={cn(headerBtn, "border border-line bg-white text-ink-900 hover:bg-surface")} onClick={() => setResetting("password")}>
             Password Reset <KeyRound size={16} aria-hidden />
           </button>

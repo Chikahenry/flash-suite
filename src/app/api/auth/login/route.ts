@@ -1,6 +1,6 @@
 import { backendFetch } from "@/lib/server/backend";
 import { config } from "@/lib/server/config";
-import { failure, isSameOrigin, json, readJson, text } from "@/lib/server/http";
+import { failure, isSameOrigin, json, readJson, text, guard } from "@/lib/server/http";
 import { extractTokens, saveSession } from "@/lib/server/session";
 
 // Step 1 of sign-in (Authentication API: POST /api/v1/auth/login). The browser sends the credentials here;
@@ -14,7 +14,7 @@ import { extractTokens, saveSession } from "@/lib/server/session";
 //   { status: "error", code, message }
 const OTP_HINT = /otp|mfa|2fa|one.?time/i;
 
-export async function POST(request: Request) {
+async function handle(request: Request) {
   if (!isSameOrigin(request)) return failure(403, "FORBIDDEN", "Request refused.");
 
   const body = await readJson(request);
@@ -46,3 +46,4 @@ export async function POST(request: Request) {
 
   return failure(502, "UNEXPECTED_RESPONSE", "The sign-in service returned something unexpected. Try again, or contact Channels Support.");
 }
+export const POST = guard(handle);

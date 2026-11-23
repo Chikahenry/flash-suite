@@ -7,6 +7,7 @@ import { ActionDialog } from "@/components/ui/action-dialog";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Notice, PageHeader, Tabs } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Modal } from "@/components/ui/modal";
 import { ErrorState } from "@/components/ui/query-state";
 import { DateRangeButton, Pager, SearchField, Toolbar } from "@/components/ui/toolbar";
@@ -186,7 +187,7 @@ export default function CardsPage() {
 
   return (
     <>
-      <PageHeader title="Cards" description="New-card requests and the production of physical cards. Temporary blocks, PIN and limits are handled in Instant Card." />
+      <PageHeader title="Cards" description="New-card requests and the production of physical cards. Temporary blocks, PIN and limits are handled in Instant Card." actions={<RefreshButton />} />
       {done && <div className="mb-4"><Notice tone="success" title="Done">{done}</Notice></div>}
       <Tabs<Tab> value={tab} onChange={(t) => url.set({ tab: t === "requests" ? "" : t, status: "" })} tabs={[{ id: "requests", label: "Card requests" }, { id: "physical", label: "Physical cards" }]} />
       <Toolbar>

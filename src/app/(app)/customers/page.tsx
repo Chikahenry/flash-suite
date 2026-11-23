@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Select } from "@/components/ui/form";
 import { Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorState } from "@/components/ui/query-state";
 import { DateRangeButton, DownloadCsvButton, FiltersButton, Pager, SearchField, Toolbar } from "@/components/ui/toolbar";
 import { useCustomerFilterOptions, useCustomers } from "@/lib/bo/customers";
@@ -97,7 +98,7 @@ export default function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="Customers" />
+      <PageHeader title="Customers" actions={<RefreshButton />} />
       {exportError && <div className="mb-4"><Notice tone="danger" title="Export failed">{exportError}</Notice></div>}
 
       <Toolbar actions={<DownloadCsvButton onClick={() => void exportCsv()} label={exporting ? "Preparing…" : "Download as CSV"} />}>

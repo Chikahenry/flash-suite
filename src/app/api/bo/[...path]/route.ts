@@ -1,5 +1,5 @@
 import { backendRaw, safeMessage } from "@/lib/server/backend";
-import { failure, isSameOrigin, noStore } from "@/lib/server/http";
+import { failure, guard, isSameOrigin, noStore } from "@/lib/server/http";
 import { getValidAccessToken } from "@/lib/server/session";
 
 // Staff API proxy. The browser calls /api/bo/<path>; this forwards it to /api/v1/backoffice/<path> on the
@@ -91,4 +91,5 @@ async function handle(request: Request, ctx: { params: Promise<{ path: string[] 
   );
 }
 
-export { handle as GET, handle as POST, handle as PUT, handle as PATCH, handle as DELETE };
+const guarded = guard(handle);
+export { guarded as GET, guarded as POST, guarded as PUT, guarded as PATCH, guarded as DELETE };

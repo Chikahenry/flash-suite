@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReadOnlyField } from "@/components/ui/form";
 import { Card, DefinitionGrid, Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorState, Skeleton } from "@/components/ui/query-state";
 import { downloadFile } from "@/lib/bo/download";
 import { formatApiDateTime, formatMoney, humanise, statusTone } from "@/lib/bo/format";
@@ -37,6 +38,7 @@ export default function TransactionPage() {
     <>
       <PageHeader back={back} title={`${humanise(t.type)} · ${formatMoney(t.amount, t.currency ?? "NGN")}`} description={`${t.reference ?? t.id} · ${formatApiDateTime(t.createdAt)}`}
         actions={<>
+          <RefreshButton />
           <Badge tone={statusTone(t.status)}>{humanise(t.status)}</Badge>
           <Button variant="secondary" onClick={() => void receipt()}><Download size={14} aria-hidden /> Receipt</Button>
           <Button variant="secondary" onClick={copy}><Copy size={14} aria-hidden /> {copied ? "Copied" : "Copy reference"}</Button>

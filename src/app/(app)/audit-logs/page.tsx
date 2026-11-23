@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Input, ReadOnlyField } from "@/components/ui/form";
 import { DefinitionGrid, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Modal } from "@/components/ui/modal";
 import { ErrorState } from "@/components/ui/query-state";
 import { DateRangeButton, FiltersButton, Pager, SearchField, Toolbar } from "@/components/ui/toolbar";
@@ -88,7 +89,7 @@ export default function AuditLogsPage() {
 
   return (
     <>
-      <PageHeader title="Audit Logs" />
+      <PageHeader title="Audit Logs" actions={<RefreshButton />} />
       <Toolbar>
         <SearchField value={text} onChange={onSearch} placeholder="Search audit events" />
         <FiltersButton active={[eventType, entityType, actorId, channel].filter(Boolean).length}>

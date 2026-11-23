@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Input, Select } from "@/components/ui/form";
 import { Card, PageHeader, SourceStamp, Tabs } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { HeaderTools } from "@/components/layout/header-tools";
 import { RequestStatusBadge } from "@/components/requests/request-bits";
 import { getDataAsOf, getSession, isOpen, isOverdue, listOrganizations, listRequests, serviceTargets, staff } from "@/lib/api";
@@ -166,7 +167,7 @@ export function DashboardView() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description={`Welcome back${who.name ? `, ${who.name.split(" ")[0]}` : ""}!`} actions={<HeaderTools initials={who.initials} />} />
+      <PageHeader title="Dashboard" description={`Welcome back${who.name ? `, ${who.name.split(" ")[0]}` : ""}!`} actions={<><RefreshButton /><HeaderTools initials={who.initials} /></>} />
       <LiveSummary />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

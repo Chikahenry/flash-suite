@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AtSign, Eye, EyeOff, KeyRound, Lock } from "lucide-react";
 import { authButton, authInput } from "@/components/ui/auth-styles";
 import { Notice } from "@/components/ui/layout";
+import { PasswordRules } from "@/components/ui/password-rules";
+import { passwordProblem } from "@/lib/password";
 
 type Step = "credentials" | "otp" | "newPassword" | "forgotEmail" | "forgotCode" | "forgotNew";
 type Reply = { status: string; message?: string; recoveryId?: string; recoveryToken?: string; destination?: string };
@@ -91,7 +93,8 @@ export default function LoginPage() {
   };
 
   const checkNew = () => {
-    if (newPassword.length < 8) return setError("The new password must be at least 8 characters."), false;
+    const problem = passwordProblem(newPassword);
+    if (problem) return setError(problem), false;
     if (newPassword !== again) return setError("The new password and the re-typed password do not match."), false;
     return true;
   };
@@ -206,6 +209,7 @@ export default function LoginPage() {
         <div className="mt-8 flex flex-col gap-6">
           {errorNotice}
           <PasswordInput id="new-password" label="New Password" value={newPassword} onChange={setNewPassword} autoComplete="new-password" autoFocus />
+          <PasswordRules value={newPassword} />
           <PasswordInput id="again-password" label="Re-type Password" value={again} onChange={setAgain} autoComplete="new-password" />
           <button type="submit" disabled={busy} className={authButton}>{busy ? "Saving…" : forgot ? "Reset password" : "Change password and log in"}</button>
           {back("credentials", "Back to log in")}

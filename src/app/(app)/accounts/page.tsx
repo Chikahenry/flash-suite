@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Input, Select } from "@/components/ui/form";
 import { PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorState } from "@/components/ui/query-state";
 import { FiltersButton, Pager, SearchField, Toolbar } from "@/components/ui/toolbar";
 import { formatMoney, humanise, statusTone } from "@/lib/bo/format";
@@ -35,7 +36,7 @@ export default function AccountsPage() {
 
   return (
     <>
-      <PageHeader title="Accounts" description="Accounts created through the supported channels" />
+      <PageHeader title="Accounts" description="Accounts created through the supported channels" actions={<RefreshButton />} />
       <Toolbar>
         <SearchField value={url.search.value} onChange={url.search.onChange} placeholder="Search by account number or name" />
         <FiltersButton active={[status, tier, channel].filter(Boolean).length}>

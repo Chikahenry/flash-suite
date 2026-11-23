@@ -7,6 +7,7 @@ import { ActionDialog } from "@/components/ui/action-dialog";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Select, Textarea } from "@/components/ui/form";
 import { Notice, PageHeader, Tabs } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Modal } from "@/components/ui/modal";
 import { ErrorState, Skeleton } from "@/components/ui/query-state";
 import { Pager } from "@/components/ui/toolbar";
@@ -65,7 +66,7 @@ export default function NewToBankPage() {
 
   return (
     <>
-      <PageHeader title="New-to-Bank" description="Review Tier 3 onboarding requests and retry mandate forwarding that failed" />
+      <PageHeader title="New-to-Bank" description="Review Tier 3 onboarding requests and retry mandate forwarding that failed" actions={<RefreshButton />} />
       {done && <div className="mb-4"><Notice tone="success" title="Done">{done}</Notice></div>}
       <Tabs<Tab> value={tab} onChange={(t) => url.set({ tab: t === "reviews" ? "" : t, status: "" })} tabs={[{ id: "reviews", label: "Reviews" }, { id: "retries", label: "Mandate retries" }]} />
       <div className="mb-4">

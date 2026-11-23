@@ -1,12 +1,12 @@
 import { backendFetch } from "@/lib/server/backend";
 import { config } from "@/lib/server/config";
-import { failure, isSameOrigin, json, readJson, text } from "@/lib/server/http";
+import { failure, isSameOrigin, json, readJson, text, guard } from "@/lib/server/http";
 import { extractTokens, saveSession } from "@/lib/server/session";
 
 // Step 2 of sign-in: completes it with the one-time code the staff member typed.
 // The back end checks the code together with the credentials, so the browser keeps them in memory
 // between the two steps and sends them again here. Nothing is stored.
-export async function POST(request: Request) {
+async function handle(request: Request) {
   if (!isSameOrigin(request)) return failure(403, "FORBIDDEN", "Request refused.");
 
   const body = await readJson(request);
@@ -30,3 +30,4 @@ export async function POST(request: Request) {
   await saveSession(tokens, { username });
   return json({ status: "authenticated" });
 }
+export const POST = guard(handle);

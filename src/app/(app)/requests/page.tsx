@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Select } from "@/components/ui/form";
 import { Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Modal } from "@/components/ui/modal";
 import { ErrorState } from "@/components/ui/query-state";
 import { DateRangeButton, FiltersButton, Pager, SearchField, Toolbar } from "@/components/ui/toolbar";
@@ -49,7 +50,7 @@ export default function RequestsPage() {
 
   return (
     <>
-      <PageHeader title="Approval Queue" />
+      <PageHeader title="Approval Queue" actions={<RefreshButton />} />
       {done && <div className="mb-4"><Notice tone="success">{done}</Notice></div>}
       {(counts.data ?? []).length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">

@@ -1,13 +1,13 @@
 import { backendFetch } from "@/lib/server/backend";
 import { config } from "@/lib/server/config";
-import { failure, isSameOrigin, json, readJson, text } from "@/lib/server/http";
+import { failure, isSameOrigin, json, readJson, text, guard } from "@/lib/server/http";
 
 // Forgotten password, in three calls to the Authentication API (all before sign-in):
 //   start    POST /api/v1/auth/password/recovery/initiate  { username }               -> recoveryId, destination
 //   verify   POST /api/v1/auth/password/recovery/verify    { recoveryId, otp }        -> recoveryToken
 //   complete POST /api/v1/auth/password/recovery/complete  { recoveryId, recoveryToken, newPassword }
 // The recovery token is handed to the browser only to be sent straight back on the last step.
-export async function POST(request: Request) {
+async function handle(request: Request) {
   if (!isSameOrigin(request)) return failure(403, "FORBIDDEN", "Request refused.");
 
   const body = await readJson(request);
@@ -45,3 +45,4 @@ export async function POST(request: Request) {
 
   return failure(400, "VALIDATION", "Unknown request.");
 }
+export const POST = guard(handle);

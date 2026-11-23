@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Input, Select } from "@/components/ui/form";
 import { Notice, PageHeader } from "@/components/ui/layout";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorState } from "@/components/ui/query-state";
 import { DateRangeButton, DownloadCsvButton, FiltersButton, Pager, SearchField, Toolbar } from "@/components/ui/toolbar";
 import { downloadFile } from "@/lib/bo/download";
@@ -48,7 +49,7 @@ export default function TransactionsPage() {
 
   return (
     <>
-      <PageHeader title="Transactions" />
+      <PageHeader title="Transactions" actions={<RefreshButton />} />
       {exportMsg && <div className="mb-4"><Notice tone={exportMsg.tone}>{exportMsg.text}</Notice></div>}
       <Toolbar actions={<DownloadCsvButton onClick={() => void exportCsv()} />}>
         <SearchField value={url.search.value} onChange={url.search.onChange} placeholder="Search by reference or account" />
