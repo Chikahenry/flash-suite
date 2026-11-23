@@ -1,20 +1,24 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { Eye, EyeOff, Info, Lock, Plus } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Eye, EyeOff, Lock, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Field, Input, ReadOnlyField, Select } from "@/components/ui/form";
 import { Card, DefinitionGrid, Notice, PageHeader } from "@/components/ui/layout";
-import { DateRangeButton, FiltersButton, SearchField } from "@/components/ui/toolbar";
+import { DateRangeButton, Pager, SearchField } from "@/components/ui/toolbar";
 import { BusinessHoursForm, EvidenceChecklistForm, ListEditor, NotificationRuleForm, SessionSettingsForm } from "@/components/settings/config-forms";
 import { useRaise } from "@/components/requests/use-raise";
 import {
-  auditLog, changeReasons, documentTypes, evidenceChecklists, getSession, notificationRules, serviceTargets,
+  changeReasons, documentTypes, evidenceChecklists, notificationRules, serviceTargets,
   type EvidenceChecklist, type NotificationRule, type ServiceTarget,
 } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { ErrorState } from "@/components/ui/query-state";
+import { useAuditEvents } from "@/lib/bo/audit";
+import { formatApiDateTime, humanise } from "@/lib/bo/format";
+import { useStaffIdentity } from "@/lib/staff-session";
 
 type Section = "password" | "profile" | "activity" | "targets" | "notifications" | "evidence" | "lists" | "security";
 
@@ -43,24 +47,42 @@ function TargetForm({ target }: { target?: ServiceTarget }) {
   );
 }
 
-/** Figma "Settings – Change Password": a centred card with three password fields, a note and a green button. */
-function ChangePassword({ onSubmit }: { onSubmit: () => void }) {
+/** Figma "Settings – Change Password": a centred card with three password fields and a green button. POST /api/auth/password. */
+function ChangePassword() {
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
   const fields = [["old", "Old Password"], ["new", "New Password"], ["again", "Re-type Password"]] as const;
 
-  const submit = () => {
+  const submit = async () => {
+    setDone(false);
     if (fields.some(([id]) => !values[id])) return setError("Fill in all three fields.");
+    if (values.new.length < 8) return setError("The new password must be at least 8 characters.");
     if (values.new !== values.again) return setError("The new password and the re-typed password do not match.");
     setError(null);
-    onSubmit();
+    setBusy(true);
+    try {
+      const res = await fetch("/api/auth/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword: values.old, newPassword: values.new }) });
+      const body = (await res.json().catch(() => null)) as { status?: string; message?: string } | null;
+      if (res.ok) {
+        setValues({});
+        setDone(true);
+      } else {
+        setError(body?.message ?? "The password could not be changed. Try again.");
+      }
+    } catch {
+      setError("Could not reach the server. Check your connection and try again.");
+    }
+    setBusy(false);
   };
 
   return (
     <div className="mx-auto mt-10 w-full max-w-[400px] rounded-xl border border-line p-6">
       <h2 className="mb-5 text-lg font-semibold">Change Password</h2>
       <div className="flex flex-col gap-4">
+        {done && <Notice tone="success">Your password has been changed.</Notice>}
         {error && <Notice tone="danger">{error}</Notice>}
         {fields.map(([id, label]) => (
           <div key={id}>
@@ -72,10 +94,50 @@ function ChangePassword({ onSubmit }: { onSubmit: () => void }) {
             </div>
           </div>
         ))}
-        <p className="flex gap-2 text-xs text-ink-500"><Info size={14} aria-hidden className="mt-0.5 shrink-0" /> All password changes must receive approval from the super admin to ensure security and compliance</p>
-        <button type="button" onClick={submit} className="h-11 rounded-lg bg-accent-500 text-sm font-medium text-white hover:bg-accent-600">Change Password</button>
+                <button type="button" onClick={() => void submit()} disabled={busy} className="h-11 rounded-lg bg-accent-500 text-sm font-medium text-white hover:bg-accent-600 disabled:opacity-60">{busy ? "Saving…" : "Change Password"}</button>
       </div>
     </div>
+  );
+}
+
+/** Figma "Settings – Activity Logs": the signed-in staff member's own events. GET /audit/events filtered to their user ID. */
+function MyActivity({ userId }: { userId: string }) {
+  const [page, setPage] = useState(1);
+  const [q, setQ] = useState("");
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const onSearch = (v: string) => { setQ(v); clearTimeout(timer.current); timer.current = setTimeout(() => { setSearch(v.trim()); setPage(1); }, 400); };
+  const list = useAuditEvents({ actorId: userId || undefined, search: search || undefined, from, to, page, size: 15 });
+  const rows = list.data?.data ?? [];
+  const meta = list.data?.page;
+
+  if (!userId) return <Notice tone="info">Loading your account…</Notice>;
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">Activity Logs</h2></div>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <SearchField value={q} onChange={onSearch} placeholder="Search by action" />
+        <div className="ml-auto"><DateRangeButton from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); setPage(1); }} /></div>
+      </div>
+      {list.isError && !list.data ? <ErrorState error={list.error} onRetry={() => void list.refetch()} title="Your activity could not be loaded" /> : (
+        <DataTable
+          headerFill
+          columns={[
+            { key: "at", header: "Time Stamp", className: "w-[200px]", cell: (a) => <span className="whitespace-nowrap tabular">{formatApiDateTime(a.eventTime ?? a.createdAt)}</span> },
+            { key: "action", header: "Action", cell: (a) => <span><span className="font-medium text-accent-700">{humanise(a.eventType)}</span>{a.description && <span className="text-ink-700"> · {a.description}</span>}</span> },
+            { key: "ip", header: "IP address", cell: (a) => <span className="tabular">{a.ipAddress ?? "—"}</span> },
+          ]}
+          rows={rows}
+          rowKey={(a) => a.eventId}
+          loading={list.isLoading}
+          empty="No activity matches."
+          footer={<Pager page={meta?.page ?? page} totalPages={meta?.totalPages} total={meta?.total} size={meta?.size ?? 15} shown={rows.length} noun="entries" onPage={setPage} />}
+        />
+      )}
+    </>
   );
 }
 
@@ -85,10 +147,7 @@ function ChangePassword({ onSubmit }: { onSubmit: () => void }) {
 export default function SettingsPage() {
   const [section, setSection] = useState<Section>("password");
   const [raise, modal] = useRaise();
-  const [q, setQ] = useState("");
-  const [from, setFrom] = useState("");
-  const session = getSession();
-  const mine = auditLog.filter((a) => a.actor === session.name);
+  const identity = useStaffIdentity();
 
   const config = (action: string, target: string, body?: ReactNode) => raise({ action, target, evidence: action === "Change password" ? [] : ["Owner approval"], body, internal: true, fn: "Configuration", submitLabel: action === "Change password" ? "Submit for approval" : undefined });
 
@@ -139,47 +198,25 @@ export default function SettingsPage() {
         </nav>
 
         <div className="min-w-0">
-          {section === "password" && <ChangePassword onSubmit={() => config("Change password", session.name)} />}
+          {section === "password" && <ChangePassword />}
 
           {section === "profile" && (
             <Card title="My profile">
               <DefinitionGrid>
-                <ReadOnlyField label="Name" value={session.name} source="Identity service" />
-                <ReadOnlyField label="Staff ID" value={<span className="tabular">{session.staffId}</span>} source="Identity service" />
-                <ReadOnlyField label="Branch / SOL" value={session.branch} source="Identity service" />
-                <ReadOnlyField label="Team" value={session.team} />
-                <ReadOnlyField label="Role" value={session.role} />
-                <ReadOnlyField label="Second factor" value="Token" />
+                <ReadOnlyField label="Name" value={identity.name || "—"} />
+                <ReadOnlyField label="Email" value={identity.username || "—"} />
+                <ReadOnlyField label="Staff ID" value={<span className="tabular">{identity.staffId || "—"}</span>} />
+                <ReadOnlyField label="Role" value={identity.roles.join(", ") || "—"} />
+                <ReadOnlyField label="Branch / SOL" value={identity.branch || "—"} />
+                <ReadOnlyField label="Team" value={identity.team || "—"} />
+                <ReadOnlyField label="User ID" value={<span className="break-all tabular">{identity.userId || "—"}</span>} />
+                <ReadOnlyField label="Channel" value="Back Office" />
               </DefinitionGrid>
-              <div className="mt-5"><Notice tone="info" title="Passwords are not managed here">Your password and token belong to the Bank identity service. Change them through the IT Service Desk. Role or branch changes are requested through IAM.</Notice></div>
+              <div className="mt-5"><Notice tone="info" title="About your profile">You can change your password under Change Password. Role or branch changes are requested through IAM.</Notice></div>
             </Card>
           )}
 
-          {section === "activity" && (
-            <>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">Activity Logs</h2>
-              </div>
-              <div className="mb-4 flex flex-wrap items-center gap-2">
-                <SearchField value={q} onChange={setQ} placeholder="Search by action" />
-                <div className="ml-auto flex gap-2">
-                  <FiltersButton><p className="text-[13px] text-ink-500">No filters are configured for activity logs yet.</p></FiltersButton>
-                  <DateRangeButton from={from} to="" onChange={(f) => setFrom(f)} />
-                </div>
-              </div>
-              <DataTable
-                headerFill
-                columns={[
-                  { key: "at", header: "Time Stamp", className: "w-[180px]", cell: (a) => <span className="tabular">{a.at.replace("T", " ").slice(0, 16)}</span> },
-                  { key: "user", header: "User", className: "w-[220px]", cell: (a) => a.actor },
-                  { key: "action", header: "Action", cell: (a) => <span>{a.action} <span className="font-medium text-accent-700">{a.record}</span>.</span> },
-                ]}
-                rows={mine.filter((a) => (a.action + " " + a.record).toLowerCase().includes(q.toLowerCase().trim()) && (!from || a.at.slice(0, 10) >= from))}
-                rowKey={(a) => a.id}
-                empty="No activity matches."
-              />
-            </>
-          )}
+          {section === "activity" && <MyActivity userId={identity.userId} />}
 
           {section === "targets" && (
             <div className="flex flex-col gap-4">

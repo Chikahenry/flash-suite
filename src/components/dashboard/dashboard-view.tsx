@@ -16,11 +16,37 @@ import { getDataAsOf, getSession, isOpen, isOverdue, listOrganizations, listRequ
 import { cn } from "@/lib/cn";
 import { formatAge } from "@/lib/format";
 import { usePermissions } from "@/lib/permissions";
+import { useStaffIdentity } from "@/lib/staff-session";
 import {
   MEASURE_DEFINITIONS, MEASURE_META, activeFilterCount, applyFilters, approvalWaitHours, filtersToQuery, inScope,
   measure, parseFilters, type Scope,
 } from "@/lib/request-filters";
 import type { BackOfficeRequest } from "@/lib/types";
+import { useDashboardSummary } from "@/lib/bo/ops";
+
+/** Live figures from GET /dashboard/summary. Each one opens the screen it counts. */
+function LiveSummary() {
+  const q = useDashboardSummary();
+  const d = q.data;
+  const items = [
+    { label: "Transactions (all time)", value: d?.totalTransactions, href: "/transactions" },
+    { label: "Transactions, last 30 days", value: d?.transactionsLast30Days, href: "/transactions" },
+    { label: "Awaiting submission or approval", value: d?.transactionsPendingSubmissionOrApproval, href: "/transactions" },
+    { label: "Approval requests pending", value: d?.approvalRequestsPending, href: "/requests" },
+    { label: "Active report schedules", value: d?.activeReportSchedules, href: "/reports" },
+  ];
+  if (q.isError) return null;
+  return (
+    <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      {items.map((i) => (
+        <Link key={i.label} href={i.href} className="rounded-xl border border-line bg-white px-4 py-3 hover:bg-surface">
+          <p className="text-xs text-ink-500">{i.label}</p>
+          <p className="mt-1 text-2xl font-semibold tabular text-ink-900">{q.isLoading ? "…" : (i.value ?? 0).toLocaleString("en-NG")}</p>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const dayLabel = (iso: string) => {
@@ -47,6 +73,7 @@ export function DashboardView() {
   const pathname = usePathname();
   const params = useSearchParams();
   const session = getSession();
+  const who = useStaffIdentity();
   const { can } = usePermissions();
 
   const filters = useMemo(() => parseFilters((k) => params.get(k)), [params]);
@@ -139,7 +166,8 @@ export function DashboardView() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description={`Welcome back, ${session.name.split(" ")[0]}!`} actions={<HeaderTools initials={session.initials} />} />
+      <PageHeader title="Dashboard" description={`Welcome back${who.name ? `, ${who.name.split(" ")[0]}` : ""}!`} actions={<HeaderTools initials={who.initials} />} />
+      <LiveSummary />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Tabs<Scope> value={scope} onChange={(s) => setParam("scope", s === "mine" ? "" : s)} tabs={allowed.map((s) => ({ id: s, label: SCOPE_LABEL[s] }))} />

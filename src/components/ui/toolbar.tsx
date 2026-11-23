@@ -91,3 +91,37 @@ export function Pagination({ shown, total, noun }: { shown: number; total: numbe
     </div>
   );
 }
+
+/**
+ * Real pagination for server-paged lists: "Showing 21-40 of 128", Previous, a window of page numbers, Next.
+ * Pages are numbered from 1, as the back end does.
+ */
+export function Pager({ page, totalPages, total, size, shown, noun, onPage }: { page: number; totalPages?: number; total?: number; size: number; shown: number; noun: string; onPage: (page: number) => void }) {
+  const last = totalPages && totalPages > 0 ? totalPages : shown >= size ? page + 1 : page;
+  const first = shown === 0 ? 0 : (page - 1) * size + 1;
+  const upTo = (page - 1) * size + shown;
+  const btn = "grid h-8 min-w-8 place-items-center rounded-md px-2 text-[13px] font-medium";
+
+  const numbers: (number | "gap")[] = [];
+  for (let n = 1; n <= last; n++) {
+    if (n === 1 || n === last || Math.abs(n - page) <= 1) numbers.push(n);
+    else if (numbers[numbers.length - 1] !== "gap") numbers.push("gap");
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] text-ink-500">
+      <span>{total !== undefined ? `Showing ${first}–${upTo} of ${total} ${noun}` : `Showing ${first}–${upTo} ${noun}`}</span>
+      <nav aria-label="Pagination" className="flex items-center gap-1">
+        <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} className={cn(btn, page <= 1 ? "text-ink-400" : "text-ink-900 hover:bg-surface")}>Previous</button>
+        {numbers.map((n, i) =>
+          n === "gap" ? (
+            <span key={`g${i}`} className="px-1 text-ink-400">…</span>
+          ) : (
+            <button key={n} type="button" aria-current={n === page ? "page" : undefined} onClick={() => onPage(n)} className={cn(btn, n === page ? "bg-surface text-ink-900" : "text-ink-700 hover:bg-surface")}>{n}</button>
+          ),
+        )}
+        <button type="button" disabled={page >= last} onClick={() => onPage(page + 1)} className={cn(btn, page >= last ? "text-ink-400" : "text-ink-900 hover:bg-surface")}>Next</button>
+      </nav>
+    </div>
+  );
+}

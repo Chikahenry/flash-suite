@@ -24,7 +24,7 @@ export function TxnStatusBadge({ status }: { status: TxnStatus }) {
 }
 
 /** Truncated reference with a copy button, as in the Figma Trx ID and Session Id columns. */
-function CopyRef({ value }: { value: string }) {
+export function CopyRef({ value }: { value: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 tabular">
       <button type="button" aria-label={`Copy ${value}`} title="Copy" onClick={(e) => { e.preventDefault(); navigator.clipboard?.writeText(value); }} className="text-ink-700 hover:text-ink-900"><Copy size={14} /></button>

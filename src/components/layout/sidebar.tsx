@@ -7,8 +7,9 @@ import { roleBundles } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { extraNav, figmaNav, type NavItem } from "@/lib/nav";
 import { ROUTE_FUNCTION, usePermissions } from "@/lib/permissions";
-import type { StaffSession } from "@/lib/types";
+import { useStaffIdentity } from "@/lib/staff-session";
 import { Brand } from "./brand";
+import { signOut } from "./session-guard";
 
 // Figma sidebar: 280px wide, logo 24px in, items 240x48 with 20px between them,
 // 20px icon, 15px medium white label, active item on a translucent white pill.
@@ -32,7 +33,8 @@ function Item({ item, active, badge }: { item: NavItem; active: boolean; badge?:
   );
 }
 
-export function Sidebar({ pendingApprovals, session }: { pendingApprovals: number; session: StaffSession }) {
+export function Sidebar({ pendingApprovals }: { pendingApprovals: number }) {
+  const who = useStaffIdentity();
   const pathname = usePathname();
   const { can, role, setRole } = usePermissions();
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
@@ -73,14 +75,14 @@ export function Sidebar({ pendingApprovals, session }: { pendingApprovals: numbe
           </select>
         </label>
         <div className="mt-3 flex items-center gap-3">
-          <span aria-hidden className="grid size-9 place-items-center rounded-full bg-white/15 text-xs font-semibold">{session.initials}</span>
+          <span aria-hidden className="grid size-9 place-items-center rounded-full bg-white/15 text-xs font-semibold">{who.initials || "··"}</span>
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-[13px] font-semibold">{session.name}</p>
-            <p className="truncate text-[11px] text-white/60">{role ?? session.role}</p>
+            <p className="truncate text-[13px] font-semibold">{who.name || "Signed in"}</p>
+            <p className="truncate text-[11px] text-white/60">{role ?? who.username}</p>
           </div>
-          <Link href="/login" onClick={() => sessionStorage.removeItem("bo-session")} aria-label="Sign out" title="Sign out" className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white">
+          <button type="button" onClick={() => void signOut()} aria-label="Sign out" title="Sign out" className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white">
             <LogOut size={16} />
-          </Link>
+          </button>
         </div>
       </div>
     </aside>

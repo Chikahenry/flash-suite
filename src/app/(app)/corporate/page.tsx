@@ -1,82 +1,101 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Input, Select } from "@/components/ui/form";
-import { PageHeader, SourceStamp } from "@/components/ui/layout";
-import { listOrganizations } from "@/lib/api";
-import { formatDateTime, orgStatusTone } from "@/lib/format";
-import type { Organization } from "@/lib/types";
-import { SourceBanner } from "@/components/ui/source-banner";
+import { PageHeader } from "@/components/ui/layout";
+import { ErrorState } from "@/components/ui/query-state";
+import { Pager } from "@/components/ui/toolbar";
+import { useCustomerFilterOptions, useCustomers } from "@/lib/bo/customers";
+import { formatApiDate, humanise, statusTone } from "@/lib/bo/format";
+import type { CustomerSummary } from "@/lib/bo/types";
 
-const columns: Column<Organization>[] = [
+const SIZE = 20;
+
+const columns: Column<CustomerSummary>[] = [
   {
     key: "name",
     header: "Organisation",
     cell: (o) => (
       <div>
-        <Link href={`/corporate/${o.id}`} className="font-medium text-brand-700 hover:underline">{o.name}</Link>
-        <p className="text-xs tabular text-ink-500">{o.id}</p>
+        <Link href={`/customers/${encodeURIComponent(o.customerId)}`} className="font-medium text-brand-700 hover:underline">{o.displayName || o.customerId}</Link>
+        <p className="text-xs tabular text-ink-500">CIF {o.customerId}</p>
       </div>
     ),
   },
-  { key: "cif", header: "CIF", cell: (o) => <span className="tabular">{o.cif}</span> },
-  { key: "segment", header: "Segment", cell: (o) => <Badge tone={o.segment === "Corporate" ? "info" : "neutral"} dot={false}>{o.segment}</Badge> },
-  { key: "users", header: "Users", align: "right", cell: (o) => o.users.length },
-  { key: "accounts", header: "Linked accounts", align: "right", cell: (o) => o.accounts.filter((a) => a.linked).length },
-  { key: "branch", header: "Branch", cell: (o) => o.branch },
-  { key: "status", header: "Status", cell: (o) => <Badge tone={orgStatusTone[o.status]}>{o.status}</Badge> },
-  { key: "updated", header: "Last updated", cell: (o) => <span className="tabular text-ink-500">{formatDateTime(o.lastUpdated)}</span> },
+  { key: "phone", header: "Phone", cell: (o) => <span className="whitespace-nowrap tabular">{o.phone || "—"}</span> },
+  { key: "email", header: "Email", cell: (o) => <span className="break-all">{o.email || "—"}</span> },
+  { key: "kyc", header: "KYC", cell: (o) => <span className="whitespace-nowrap">{o.kycTier !== undefined && `Tier ${o.kycTier} · `}{humanise(o.kycStatus)}</span> },
+  { key: "status", header: "Status", cell: (o) => <Badge tone={statusTone(o.retailStatus)}>{humanise(o.retailStatus)}</Badge> },
+  { key: "created", header: "Created", cell: (o) => <span className="whitespace-nowrap tabular text-ink-500">{formatApiDate(o.createdAt)}</span> },
 ];
 
-// Organisation search and list. GET /organizations, GET /search.
+// Organisation list. GET /customers: a corporate customer is an organisation, and its CIF is the customer ID.
+// Search, status and page live in the address bar. Open an organisation to see its accounts, cases and actions.
 export default function CorporatePage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
-  const [q, setQ] = useState(params.get("q") ?? "");
-  const [segment, setSegment] = useState("");
-  const [status, setStatus] = useState("");
 
-  const rows = listOrganizations().filter((o) => {
-    const text = `${o.name} ${o.cif} ${o.id} ${o.accounts.map((a) => a.number).join(" ")} ${o.users.map((u) => u.username).join(" ")}`.toLowerCase();
-    return text.includes(q.toLowerCase()) && (!segment || o.segment === segment) && (!status || o.status === status);
-  });
+  const page = Math.max(1, Number(params.get("page")) || 1);
+  const search = params.get("q") ?? "";
+  const status = params.get("status") ?? "";
+
+  const setParams = (patch: Record<string, string>) => {
+    const next = new URLSearchParams(params.toString());
+    for (const [k, v] of Object.entries(patch)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
+    if (!("page" in patch)) next.delete("page");
+    const t = next.toString();
+    router.replace(t ? `${pathname}?${t}` : pathname, { scroll: false });
+  };
+
+  const [text, setText] = useState(search);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const onSearch = (v: string) => {
+    setText(v);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setParams({ q: v.trim() }), 400);
+  };
+
+  const options = useCustomerFilterOptions().data;
+  const list = useCustomers({ search, status, page, size: SIZE });
+  const rows = list.data?.data ?? [];
+  const meta = list.data?.page;
 
   return (
     <>
-      <PageHeader
-        title="Corporate & SME"
-        description="Find an organisation by name, CIF, account number or username, then act on it without searching again."
-        actions={
-          <Link href="/corporate/new" className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent-500 px-4 text-sm font-medium text-white hover:bg-accent-600">
-            <Plus size={16} aria-hidden /> Set up organisation
-          </Link>
-        }
-      />
-      <SourceBanner source="Corporate/SME platform" affects="Organisations and users" />
+      <PageHeader title="Corporate & SME" description="Find an organisation by name, phone or email, then open it to act on it without searching again." />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="w-full max-w-sm">
-          <Input aria-label="Search organisations" placeholder="Name, CIF, account number or username" value={q} onChange={(e) => setQ(e.target.value)} icon={<Search size={16} />} />
+          <Input aria-label="Search organisations" placeholder="Name, phone or email" value={text} onChange={(e) => onSearch(e.target.value)} icon={<Search size={16} />} />
         </div>
-        <Select aria-label="Segment" value={segment} onChange={(e) => setSegment(e.target.value)} className="w-40">
-          <option value="">All segments</option>
-          <option>Corporate</option>
-          <option>SME</option>
-        </Select>
-        <Select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)} className="w-44">
+        <Select aria-label="Status" value={status} onChange={(e) => setParams({ status: e.target.value })} className="w-44">
           <option value="">All statuses</option>
-          <option>Active</option>
-          <option>Pending setup</option>
-          <option>Deactivated</option>
+          {options?.statuses?.map((s) => <option key={s} value={s}>{humanise(s)}</option>)}
         </Select>
-        <span className="ml-auto"><SourceStamp source="Corporate platform" at="2026-11-11T12:20:00" /></span>
       </div>
 
-      <DataTable columns={columns} rows={rows} rowKey={(o) => o.id} empty="No organisation matches. Check the search, or set up a new organisation." />
+      {list.isError && !list.data ? (
+        <ErrorState error={list.error} onRetry={() => void list.refetch()} title="Organisations could not be loaded" />
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(o) => o.customerId}
+          loading={list.isLoading}
+          empty="No organisation matches. Check the search or the status filter."
+          footer={<Pager page={meta?.page ?? page} totalPages={meta?.totalPages} total={meta?.total} size={meta?.size ?? SIZE} shown={rows.length} noun="organisations" onPage={(p) => setParams({ page: String(p) })} />}
+        />
+      )}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import {
   LayoutGrid, Users, ArrowLeftRight, SquareCheckBig, Building2, FileText, History, UserRound,
-  CircleUserRound, Settings, Hash, Smartphone, CreditCard, Megaphone, Activity, FileBarChart, type LucideIcon,
+  CircleUserRound, Settings, Hash, Smartphone, CreditCard, Megaphone, ArrowUpCircle, UserPlus, Landmark, Radio, Activity, FileBarChart, type LucideIcon,
 } from "lucide-react";
 
 export interface NavItem {
@@ -31,6 +31,10 @@ export const extraNav: NavItem[] = [
   { href: "/instant-banking", label: "Instant Banking", icon: Hash },
   { href: "/devices", label: "Devices", icon: Smartphone },
   { href: "/cards", label: "Cards", icon: CreditCard },
+  { href: "/accounts", label: "Accounts", icon: Landmark },
+  { href: "/account-upgrades", label: "Account Upgrades", icon: ArrowUpCircle },
+  { href: "/new-to-bank", label: "New-to-Bank", icon: UserPlus },
+  { href: "/broadcasts", label: "Broadcasts", icon: Radio },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/system-status", label: "System Status", icon: Activity },
   { href: "/reports", label: "Reports", icon: FileBarChart },

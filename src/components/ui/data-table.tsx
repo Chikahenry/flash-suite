@@ -26,6 +26,7 @@ export function DataTable<T>({
   empty = "No records match.",
   grid = false,
   headerFill = false,
+  loading = false,
   selectable,
   footer,
 }: {
@@ -37,6 +38,8 @@ export function DataTable<T>({
   /** Grey header row, as on the Figma Transactions and Audit Logs tables. */
   headerFill?: boolean;
   footer?: ReactNode;
+  /** True while the first page of data is being fetched: shows placeholder rows. */
+  loading?: boolean;
   selectable?: { selected: string[]; onChange: (keys: string[]) => void };
 }) {
   const keys = rows.map(rowKey);
@@ -65,7 +68,16 @@ export function DataTable<T>({
           </tr>
         </thead>
         <tbody>
-          {rows.length === 0 ? (
+          {loading && rows.length === 0 ? (
+            Array.from({ length: 8 }, (_, i) => (
+              <tr key={i} className="h-[52px] border-t border-line">
+                {selectable && <td className="px-4"><div className="size-[18px] animate-pulse rounded bg-surface" /></td>}
+                {columns.map((c) => (
+                  <td key={c.key} className="px-4"><div className="h-4 w-4/5 animate-pulse rounded bg-surface" /></td>
+                ))}
+              </tr>
+            ))
+          ) : rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length + (selectable ? 1 : 0)} className="border-t border-line px-4 py-12 text-center text-ink-500">{empty}</td>
             </tr>

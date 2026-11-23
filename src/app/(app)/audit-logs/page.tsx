@@ -1,80 +1,141 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/ui/data-table";
-import { Field, ReadOnlyField, Select } from "@/components/ui/form";
-import { DefinitionGrid, Notice, PageHeader } from "@/components/ui/layout";
-import { DateRangeButton, DownloadCsvButton, FiltersButton, Pagination, SearchField, Toolbar } from "@/components/ui/toolbar";
+import { Field, Input, ReadOnlyField } from "@/components/ui/form";
+import { DefinitionGrid, PageHeader } from "@/components/ui/layout";
 import { Modal } from "@/components/ui/modal";
-import { StepUpModal } from "@/components/requests/step-up-modal";
-import { auditLog, type AuditEntry } from "@/lib/api";
-import { formatDateTime } from "@/lib/format";
+import { ErrorState } from "@/components/ui/query-state";
+import { DateRangeButton, FiltersButton, Pager, SearchField, Toolbar } from "@/components/ui/toolbar";
+import { useAuditEvent, useAuditEvents, type AuditEvent } from "@/lib/bo/audit";
+import { formatApiDateTime, humanise, statusTone } from "@/lib/bo/format";
 
-const outcomeTone = { Success: "success", Failed: "danger", Denied: "warning" } as const;
-const CATEGORIES: AuditEntry["category"][] = ["Sign-in", "Enquiry", "Submission", "Approval", "Processing", "Evidence", "Export", "Configuration"];
+const SIZE = 20;
+const when = (e: AuditEvent) => e.eventTime ?? e.createdAt;
 
-// Audit trail (BRD DRA013..015). Read-only: records cannot be changed or deleted here,
-// and opening this page is itself audited. GET /audit-logs, /audit-logs/export.
+/** A filter box that applies when you leave it or press Enter, so typing does not fire a request per letter. */
+function FilterInput({ id, label, value, onApply, placeholder }: { id: string; label: string; value: string; onApply: (v: string) => void; placeholder?: string }) {
+  const [text, setText] = useState(value);
+  const [seen, setSeen] = useState(value);
+  if (seen !== value) { setSeen(value); setText(value); }
+  return (
+    <Field label={label} htmlFor={id}>
+      <Input id={id} value={text} placeholder={placeholder} onChange={(e) => setText(e.target.value)} onBlur={() => text.trim() !== value && onApply(text.trim())} onKeyDown={(e) => e.key === "Enter" && onApply(text.trim())} />
+    </Field>
+  );
+}
+
+// Figma "Audit Logs": Time Stamp, User, Action. Read-only: records cannot be changed or deleted here.
+// GET /audit/events (and /audit/events/{eventId}). Filters and page live in the address bar.
 export default function AuditLogsPage() {
-  const [q, setQ] = useState("");
-  const [category, setCategory] = useState("");
-  const [outcome, setOutcome] = useState("");
-  const [from, setFrom] = useState("");
-  const [open, setOpen] = useState<AuditEntry | null>(null);
-  const [stepUp, setStepUp] = useState(false);
-  const [exported, setExported] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
 
-  const rows = auditLog.filter((a) =>
-    `${a.actor} ${a.action} ${a.record} ${a.requestRef ?? ""} ${a.id}`.toLowerCase().includes(q.toLowerCase().trim()) &&
-    (!category || a.category === category) && (!outcome || a.outcome === outcome) && (!from || a.at.slice(0, 10) >= from));
+  const page = Math.max(1, Number(params.get("page")) || 1);
+  const search = params.get("q") ?? "";
+  const eventType = params.get("eventType") ?? "";
+  const entityType = params.get("entityType") ?? "";
+  const actorId = params.get("actorId") ?? "";
+  const channel = params.get("channel") ?? "";
+  const from = params.get("from") ?? "";
+  const to = params.get("to") ?? "";
 
-  // Figma "Audit Logs" columns: Time Stamp, User, Action. The record is highlighted in green,
-  // and the action opens the full entry.
-  const columns: Column<AuditEntry>[] = [
-    { key: "at", header: "Time Stamp", className: "w-[200px]", cell: (a) => <span className="tabular">{a.at.replace("T", " ").slice(0, 16)}</span> },
-    { key: "actor", header: "User", className: "w-[280px]", cell: (a) => <span>{a.actor}{a.outcome !== "Success" && <span className="ml-2"><Badge tone={outcomeTone[a.outcome]}>{a.outcome}</Badge></span>}</span> },
-    { key: "action", header: "Action", cell: (a) => <button type="button" onClick={() => setOpen(a)} className="text-left hover:underline">{a.action} <span className="font-medium text-accent-700">{a.record}</span>.</button> },
+  const setParams = (patch: Record<string, string>) => {
+    const next = new URLSearchParams(params.toString());
+    for (const [k, v] of Object.entries(patch)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
+    if (!("page" in patch)) next.delete("page");
+    const t = next.toString();
+    router.replace(t ? `${pathname}?${t}` : pathname, { scroll: false });
+  };
+
+  const [text, setText] = useState(search);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const onSearch = (v: string) => {
+    setText(v);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setParams({ q: v.trim() }), 400);
+  };
+
+  const [openId, setOpenId] = useState<string | null>(null);
+  const list = useAuditEvents({ search, eventType, entityType, actorId, channel, from, to, page, size: SIZE });
+  const rows = list.data?.data ?? [];
+  const meta = list.data?.page;
+  const opened = rows.find((r) => r.eventId === openId);
+  const detail = useAuditEvent(openId);
+  const event = detail.data ?? opened;
+
+  const columns: Column<AuditEvent>[] = [
+    { key: "at", header: "Time Stamp", className: "w-[200px]", cell: (e) => <span className="whitespace-nowrap tabular">{formatApiDateTime(when(e))}</span> },
+    { key: "actor", header: "User", className: "w-[260px]", cell: (e) => <span className="break-all">{e.actorId ?? "—"}{e.actorType && <span className="ml-2 text-xs text-ink-500">{humanise(e.actorType)}</span>}</span> },
+    {
+      key: "action", header: "Action",
+      cell: (e) => (
+        <button type="button" onClick={() => setOpenId(e.eventId)} className="text-left hover:underline">
+          <span className="font-medium text-accent-700">{humanise(e.eventType)}</span>
+          {e.description ? <span className="text-ink-700"> · {e.description}</span> : e.entityType ? <span className="text-ink-700"> · {humanise(e.entityType)} {e.entityId}</span> : null}
+        </button>
+      ),
+    },
   ];
 
   return (
     <>
       <PageHeader title="Audit Logs" />
-      {exported && <div className="mb-4"><Notice tone="success">Export started with the current filters. This export is itself recorded in the audit log.</Notice></div>}
-      <Toolbar actions={<DownloadCsvButton onClick={() => setStepUp(true)} />}>
-        <SearchField value={q} onChange={setQ} placeholder="Search by Account No, Name" />
-        <FiltersButton active={[category, outcome].filter(Boolean).length}>
-          <Field label="Category" htmlFor="a-cat"><Select id="a-cat" value={category} onChange={(e) => setCategory(e.target.value)}><option value="">All categories</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</Select></Field>
-          <Field label="Outcome" htmlFor="a-out"><Select id="a-out" value={outcome} onChange={(e) => setOutcome(e.target.value)}><option value="">All outcomes</option><option>Success</option><option>Failed</option><option>Denied</option></Select></Field>
+      <Toolbar>
+        <SearchField value={text} onChange={onSearch} placeholder="Search audit events" />
+        <FiltersButton active={[eventType, entityType, actorId, channel].filter(Boolean).length}>
+          <FilterInput id="a-type" label="Event type" value={eventType} onApply={(v) => setParams({ eventType: v })} placeholder="e.g. LOGIN_SUCCESS" />
+          <FilterInput id="a-entity" label="Entity type" value={entityType} onApply={(v) => setParams({ entityType: v })} />
+          <FilterInput id="a-actor" label="User ID" value={actorId} onApply={(v) => setParams({ actorId: v })} />
+          <FilterInput id="a-channel" label="Channel" value={channel} onApply={(v) => setParams({ channel: v })} placeholder="e.g. BACKOFFICE" />
         </FiltersButton>
-        <DateRangeButton from={from} to="" onChange={(f) => setFrom(f)} />
+        <DateRangeButton from={from} to={to} onChange={(f, t) => setParams({ from: f, to: t })} />
       </Toolbar>
-      <DataTable headerFill columns={columns} rows={rows} rowKey={(a) => a.id} empty="No audit record matches these filters." footer={<Pagination shown={rows.length} total={auditLog.length} noun="entries" />} />
 
-      <Modal open={!!open} onClose={() => setOpen(null)} title={open?.action ?? ""} description={open ? `${open.id} · ${formatDateTime(open.at)}` : undefined} footer={<Button variant="secondary" onClick={() => setOpen(null)}>Close</Button>}>
-        {open && (
-          <div className="flex flex-col gap-4">
+      {list.isError && !list.data ? (
+        <ErrorState error={list.error} onRetry={() => void list.refetch()} title="Audit events could not be loaded" />
+      ) : (
+        <DataTable
+          headerFill
+          columns={columns}
+          rows={rows}
+          rowKey={(e) => e.eventId}
+          loading={list.isLoading}
+          empty="No audit record matches these filters."
+          footer={<Pager page={meta?.page ?? page} totalPages={meta?.totalPages} total={meta?.total} size={meta?.size ?? SIZE} shown={rows.length} noun="entries" onPage={(p) => setParams({ page: String(p) })} />}
+        />
+      )}
+
+      <Modal open={!!openId} onClose={() => setOpenId(null)} title={event ? humanise(event.eventType) : "Audit event"} description={event ? `${event.eventId} · ${formatApiDateTime(when(event))}` : undefined} footer={<Button variant="secondary" onClick={() => setOpenId(null)}>Close</Button>}>
+        {event && (
+          <div className="flex flex-col gap-4 pb-2">
+            {event.description && <p className="text-sm text-ink-900">{event.description}</p>}
             <DefinitionGrid cols={2}>
-              <ReadOnlyField label="User" value={open.actor} />
-              <ReadOnlyField label="Role" value={open.role} />
-              <ReadOnlyField label="Team or branch" value={open.branch} />
-              <ReadOnlyField label="Outcome" value={<Badge tone={outcomeTone[open.outcome]}>{open.outcome}</Badge>} />
-              <ReadOnlyField label="Affected record" value={open.record} />
-              <ReadOnlyField label="Request" value={open.requestRef ? <Link href={`/requests/${open.requestRef}`} className="tabular text-brand-700 hover:underline">{open.requestRef}</Link> : "None"} />
+              <ReadOnlyField label="User" value={event.actorId ?? "—"} />
+              <ReadOnlyField label="User type" value={humanise(event.actorType)} />
+              <ReadOnlyField label="Channel" value={humanise(event.channel)} />
+              <ReadOnlyField label="IP address" value={event.ipAddress ?? "—"} />
+              <ReadOnlyField label="Affected record" value={event.entityType ? `${humanise(event.entityType)} ${event.entityId ?? ""}` : "—"} />
+              <ReadOnlyField label="Integrity" value={event.integrityStatus ? <Badge tone={statusTone(event.integrityStatus === "TAMPERED" ? "FAILED" : event.integrityStatus)}>{humanise(event.integrityStatus)}</Badge> : "—"} />
+              <ReadOnlyField label="Correlation ID" value={<span className="break-all tabular">{event.correlationId ?? "—"}</span>} />
             </DefinitionGrid>
-            {(open.before || open.after) && (
+            {(event.before || event.after) && (
               <div className="grid grid-cols-2 gap-3 rounded-lg border border-line p-3 text-sm">
-                <div><p className="text-xs text-ink-500">Previous value</p><p className="mt-1">{open.before ?? "None"}</p></div>
-                <div><p className="text-xs text-ink-500">Resulting value</p><p className="mt-1 font-medium">{open.after ?? "None"}</p></div>
+                <div className="min-w-0"><p className="text-xs text-ink-500">Previous value</p><p className="mt-1 break-words">{event.before ?? "None"}</p></div>
+                <div className="min-w-0"><p className="text-xs text-ink-500">Resulting value</p><p className="mt-1 break-words font-medium">{event.after ?? "None"}</p></div>
               </div>
             )}
-            {open.reason && <div><p className="text-xs text-ink-500">Reason</p><p className="mt-1 text-sm">{open.reason}</p></div>}
           </div>
         )}
       </Modal>
-      <StepUpModal open={stepUp} onClose={() => setStepUp(false)} onVerified={() => { setStepUp(false); setExported(true); }} actionLabel="export the audit log" />
     </>
   );
 }
