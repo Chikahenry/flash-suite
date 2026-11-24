@@ -1,6 +1,6 @@
 import {
   LayoutGrid, Users, ArrowLeftRight, SquareCheckBig, Building2, FileText, History, UserRound,
-  CircleUserRound, Settings, Hash, Smartphone, CreditCard, Megaphone, ArrowUpCircle, UserPlus, Landmark, Radio, Activity, FileBarChart, type LucideIcon,
+  CircleUserRound, ClipboardCheck, Settings, Hash, Smartphone, CreditCard, Megaphone, ArrowUpCircle, UserPlus, Landmark, Radio, Activity, FileBarChart, type LucideIcon,
 } from "lucide-react";
 
 export interface NavItem {
@@ -28,6 +28,7 @@ export const figmaNav: NavItem[] = [
 /** Modules the BRD requires that have no Figma design yet. They use the same item style. */
 export const extraNav: NavItem[] = [
   { href: "/corporate", label: "Corporate & SME", icon: Building2 },
+  { href: "/enrolments", label: "Enrolments", icon: ClipboardCheck },
   { href: "/instant-banking", label: "Instant Banking", icon: Hash },
   { href: "/devices", label: "Devices", icon: Smartphone },
   { href: "/cards", label: "Cards", icon: CreditCard },

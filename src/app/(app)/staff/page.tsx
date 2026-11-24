@@ -21,6 +21,7 @@ import { downloadFile } from "@/lib/bo/download";
 import { humanise, statusTone } from "@/lib/bo/format";
 import { useUrlState } from "@/lib/bo/use-url-state";
 import { cn } from "@/lib/cn";
+import { useDismiss } from "@/lib/use-dismiss";
 
 const SIZE = 20;
 const inactive = (s?: string) => /INACTIVE|DEACTIVAT|DISABLED/i.test(s ?? "");
@@ -149,6 +150,7 @@ export default function StaffPage() {
   const branch = url.get("branch");
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  useDismiss(menuFor !== null, () => setMenuFor(null), menuFor ?? "");
   const [selected, setSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<StaffMember | "new" | null>(null);
   const [act, setAct] = useState<Act>(null);
@@ -171,7 +173,7 @@ export default function StaffPage() {
     {
       key: "act", header: "Action",
       cell: (s) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" data-dismiss={s.staffId}>
           <button type="button" aria-label={`Edit ${fullName(s)}`} title="Edit user" className={iconBtn} onClick={() => setEditing(s)}><SquarePen size={16} /></button>
           {inactive(s.status)
             ? <button type="button" aria-label={`Reactivate ${fullName(s)}`} title="Reactivate user" className={cn(iconBtn, "text-accent-700")} onClick={() => setAct({ member: s, action: "reactivate" })}><RotateCcw size={16} /></button>

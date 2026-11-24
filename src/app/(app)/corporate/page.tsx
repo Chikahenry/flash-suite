@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Input, Select } from "@/components/ui/form";
@@ -73,7 +73,7 @@ export default function CorporatePage() {
 
   return (
     <>
-      <PageHeader title="Corporate & SME" description="Find an organisation by name, phone or email, then open it to act on it without searching again." actions={<RefreshButton />} />
+      <PageHeader title="Corporate & SME" description="Find an organisation by name, phone or email, then open it to act on it without searching again." actions={<><RefreshButton /><Link href="/corporate/new" className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent-500 px-4 text-sm font-medium text-white hover:bg-accent-600"><Plus size={16} aria-hidden /> Enrol a customer</Link></>} />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="w-full max-w-sm">

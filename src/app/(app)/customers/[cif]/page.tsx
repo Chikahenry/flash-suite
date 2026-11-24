@@ -18,6 +18,7 @@ import {
 import { formatApiDate, formatApiDateTime, formatMoney, humanise, initialsOf, isBlocked, statusTone } from "@/lib/bo/format";
 import type { CustomerCard } from "@/lib/bo/types";
 import { cn } from "@/lib/cn";
+import { useDismiss } from "@/lib/use-dismiss";
 
 type Tab = "transactions" | "activity" | "kyc" | "cases";
 
@@ -61,6 +62,7 @@ export default function CustomerPage() {
   const [tab, setTab] = useState<Tab>("transactions");
   const [account, setAccount] = useState<string | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
+  useDismiss(menu !== null, () => setMenu(null), menu ?? "");
   const [updating, setUpdating] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [resetting, setResetting] = useState<"password" | "pin" | null>(null);
@@ -121,12 +123,14 @@ export default function CustomerPage() {
           <button type="button" className={cn(headerBtn, blocked ? "border border-accent-100 bg-accent-50 text-accent-700 hover:bg-accent-100" : "border border-red-100 bg-red-50 text-red-700 hover:bg-red-100")} onClick={() => setBlocking(true)}>
             {blocked ? "Unblock Account" : "Block Account"} <CircleX size={16} aria-hidden />
           </button>
-          <button type="button" aria-label="More actions" aria-expanded={menu === "header"} onClick={() => setMenu(menu === "header" ? null : "header")} className="grid size-10 place-items-center rounded-lg border border-line bg-white text-ink-700 hover:bg-surface"><MoreHorizontal size={18} /></button>
-          {menu === "header" && (
-            <ul role="menu" className="absolute right-0 top-12 z-10 w-48 rounded-lg border border-line bg-white py-1 shadow-pop">
-              <li role="none"><button role="menuitem" type="button" onClick={() => { setMenu(null); setResetting("pin"); }} className="block w-full px-3 py-2 text-left text-[13px] hover:bg-surface">PIN Reset</button></li>
-            </ul>
-          )}
+          <div className="relative" data-dismiss="header">
+            <button type="button" aria-label="More actions" aria-expanded={menu === "header"} onClick={() => setMenu(menu === "header" ? null : "header")} className="grid size-10 place-items-center rounded-lg border border-line bg-white text-ink-700 hover:bg-surface"><MoreHorizontal size={18} /></button>
+            {menu === "header" && (
+              <ul role="menu" className="absolute right-0 top-12 z-10 w-48 rounded-lg border border-line bg-white py-1 shadow-pop">
+                <li role="none"><button role="menuitem" type="button" onClick={() => { setMenu(null); setResetting("pin"); }} className="block w-full px-3 py-2 text-left text-[13px] hover:bg-surface">PIN Reset</button></li>
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
@@ -199,7 +203,7 @@ export default function CustomerPage() {
             const cardBlocked = isBlocked(card.status) || /LOST|STOLEN|HOTLIST/i.test(card.status ?? "");
             const last4 = (card.maskedPan ?? "").slice(-4);
             return (
-              <div key={card.cardId} className={cn("relative flex items-center gap-3 rounded-xl border p-4", cardBlocked ? "border-red-200 bg-red-50" : "border-line bg-white")}>
+              <div key={card.cardId} data-dismiss={card.cardId} className={cn("relative flex items-center gap-3 rounded-xl border p-4", cardBlocked ? "border-red-200 bg-red-50" : "border-line bg-white")}>
                 <span className="grid h-8 w-11 place-items-center rounded-md bg-white text-[10px] font-bold uppercase ring-1 ring-line">{(card.scheme ?? "CARD").slice(0, 4)}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-ink-900">Ending {last4 || "····"}</p>

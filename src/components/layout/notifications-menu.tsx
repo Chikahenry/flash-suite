@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { notifications as seed } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
+import { useDismiss } from "@/lib/use-dismiss";
 
 /** Staff alerts (GET /notifications). Each one opens its request directly (BRD 16.5 rule 13). */
 export function NotificationsMenu() {
@@ -16,9 +17,10 @@ export function NotificationsMenu() {
 
   // Pages stay mounted when hidden, so close the panel when this one is hidden.
   useLayoutEffect(() => () => setOpen(false), []);
+  useDismiss(open, () => setOpen(false), "notifications");
 
   return (
-    <div className="relative">
+    <div className="relative" data-dismiss="notifications">
       <button
         type="button"
         aria-label={`Notifications, ${unread} unread`}

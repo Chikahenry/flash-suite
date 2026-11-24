@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/layout";
 import type { RaiseRequestConfig } from "@/components/requests/raise-request-modal";
 import { accessStatusTone, formatDateTime, formatNaira } from "@/lib/format";
 import type { CorporateUser, Organization } from "@/lib/types";
+import { useDismiss } from "@/lib/use-dismiss";
 
 type Raise = (config: RaiseRequestConfig) => void;
 
@@ -68,6 +69,7 @@ export function UsersTab({ org, raise }: { org: Organization; raise: Raise }) {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   // The menu is positioned against the viewport so the table scroll container cannot clip it.
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  useDismiss(menuFor !== null, () => setMenuFor(null), menuFor ?? "");
 
   const start = (user: CorporateUser, action: string) => {
     setMenuFor(null);
@@ -100,7 +102,7 @@ export function UsersTab({ org, raise }: { org: Organization; raise: Raise }) {
       header: "",
       align: "right",
       cell: (u) => (
-        <div className="relative inline-block text-left">
+        <div className="relative inline-block text-left" data-dismiss={u.id}>
           <Button variant="secondary" size="sm" aria-haspopup="menu" aria-expanded={menuFor === u.id} onClick={(e) => {
               const r = e.currentTarget.getBoundingClientRect();
               const below = window.innerHeight - r.bottom > 320;

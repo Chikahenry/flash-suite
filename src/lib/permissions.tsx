@@ -10,6 +10,7 @@ export const WORKFLOW = "__workflow";
 export const ROUTE_FUNCTION: Record<string, string> = {
   "/customers": "Retail digital users",
   "/corporate": "Corporate / SME setup",
+  "/enrolments": "Corporate / SME setup",
   "/instant-banking": "Instant Banking",
   "/transactions": "Transactions",
   "/cases": "CRM cases",

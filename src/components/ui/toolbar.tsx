@@ -1,8 +1,9 @@
 "use client";
 
-import { useLayoutEffect, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useState, type ReactNode } from "react";
 import { ArrowDown, CalendarDays, ListFilter, Search } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useDismiss } from "@/lib/use-dismiss";
 
 const pill = "inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-white px-3.5 text-sm font-medium text-ink-900 hover:bg-surface";
 
@@ -25,9 +26,11 @@ export function SearchField({ value, onChange, placeholder, label }: { value: st
 /** "Filters" button with a drop-down panel for the screen's filter controls. */
 export function FiltersButton({ children, active }: { children: ReactNode; active?: number }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
   useLayoutEffect(() => () => setOpen(false), []);
+  useDismiss(open, () => setOpen(false), id);
   return (
-    <div className="relative">
+    <div className="relative" data-dismiss={id}>
       <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={pill}>
         <ListFilter size={16} aria-hidden /> Filters
         {active ? <span className="rounded-full bg-accent-500 px-1.5 text-[11px] font-semibold text-white tabular">{active}</span> : null}
@@ -40,10 +43,12 @@ export function FiltersButton({ children, active }: { children: ReactNode; activ
 /** "Date Range" button with from and to dates. */
 export function DateRangeButton({ from, to, onChange }: { from: string; to: string; onChange: (from: string, to: string) => void }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
   useLayoutEffect(() => () => setOpen(false), []);
+  useDismiss(open, () => setOpen(false), id);
   const field = "h-10 w-full rounded-lg bg-surface px-3 text-sm";
   return (
-    <div className="relative">
+    <div className="relative" data-dismiss={id}>
       <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={cn(pill, (from || to) && "border-accent-500")}>
         <CalendarDays size={16} aria-hidden /> Date Range
       </button>
