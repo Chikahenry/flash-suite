@@ -17,6 +17,7 @@ import {
 } from "@/lib/bo/customers";
 import { formatApiDate, formatApiDateTime, formatMoney, humanise, initialsOf, isBlocked, statusTone } from "@/lib/bo/format";
 import type { CustomerCard } from "@/lib/bo/types";
+import { AutoEnrolPanel } from "@/components/customers/auto-enrol";
 import { cn } from "@/lib/cn";
 import { useDismiss } from "@/lib/use-dismiss";
 
@@ -153,6 +154,8 @@ export default function CustomerPage() {
         <Detail label="Created">{formatApiDateTime(c.createdAt)}</Detail>
         <Detail label="Last updated">{formatApiDateTime(c.updatedAt)}</Detail>
       </div>
+
+      <AutoEnrolPanel customerId={customerId} onDone={setDone} />
 
       <div className="mt-6 border-t border-line pt-6">
         {accounts.isError ? (

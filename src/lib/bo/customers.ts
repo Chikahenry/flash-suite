@@ -110,6 +110,19 @@ export const useSetCustomerBlocked = (customerId: string) =>
 export const useResetCredential = (customerId: string) =>
   useCustomerMutation(customerId, async (kind: "password" | "pin") => (await api<CredentialResetResult>(`/customers/${id(customerId)}/${kind}-reset`, { method: "POST" })).data);
 
+// Retail auto-enrolment: POST/GET /customers/{id}/credentials/auto-enrol, .../resend, .../revoke.
+// The Bank generates a temporary password and emails it. It is never returned here, so nothing on this side can show or log it.
+export type AutoEnrolStatus = "NOT_ENROLLED" | "PENDING_FIRST_LOGIN" | "ACTIVE";
+export interface AutoEnrolState { customerId: string; retailIdentityPresent?: boolean; enabled?: boolean; passwordChangeRequired?: boolean; status?: AutoEnrolStatus | string }
+export interface AutoEnrolResult { customerId: string; action?: string; status?: string; maskedEmail?: string; triggeredAt?: string; revokedAt?: string }
+
+export const useAutoEnrol = (customerId: string) =>
+  useQuery({ queryKey: ["customers", customerId, "auto-enrol"], queryFn: async () => (await api<AutoEnrolState>(`/customers/${id(customerId)}/credentials/auto-enrol`)).data });
+
+export const useAutoEnrolAction = (customerId: string) =>
+  useCustomerMutation(customerId, async (action: "trigger" | "resend" | "revoke") =>
+    (await api<AutoEnrolResult>(`/customers/${id(customerId)}/credentials/auto-enrol${action === "trigger" ? "" : `/${action}`}`, { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } })).data);
+
 export const useBlockCard = (customerId: string) =>
   useCustomerMutation(
     customerId,
